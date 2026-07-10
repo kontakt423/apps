@@ -40,7 +40,7 @@ jobs:
 
       - name: Locate APK
         id: apk
-        run: echo "path=$(find app/build/outputs/apk/debug -name '*.apk' | head -n1)" >> "$GITHUB_OUTPUT"
+        run: echo "path=Waffensachkunde/$(find app/build/outputs/apk/debug -name '*.apk' | head -n1)" >> "$GITHUB_OUTPUT"
 
       - name: Upload APK as build artifact
         uses: actions/upload-artifact@v4
