@@ -1,10 +1,9 @@
 package com.waffensachkunde.trainer.ui.learn
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -28,11 +28,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.waffensachkunde.trainer.data.model.QuestionType
+import com.waffensachkunde.trainer.ui.common.McOptionRow
+import com.waffensachkunde.trainer.ui.common.MnemonicSection
+import com.waffensachkunde.trainer.ui.common.ResultBanner
 
 @Composable
 fun QuizScreen(
@@ -62,7 +65,11 @@ fun QuizScreen(
             )
             state.current != null -> QuizQuestionContent(
                 state = state,
-                onSelect = viewModel::selectAnswer,
+                onToggleOption = viewModel::toggleOption,
+                onSubmitMc = viewModel::submitMc,
+                onRevealDirect = viewModel::revealDirect,
+                onSelfAssess = viewModel::selfAssess,
+                onToggleMnemonic = viewModel::toggleMnemonic,
                 onNext = viewModel::next,
                 onToggleBookmark = viewModel::toggleBookmark,
                 modifier = Modifier.padding(padding)
@@ -74,12 +81,19 @@ fun QuizScreen(
 @Composable
 private fun QuizQuestionContent(
     state: QuizUiState,
-    onSelect: (Int) -> Unit,
+    onToggleOption: (Int) -> Unit,
+    onSubmitMc: () -> Unit,
+    onRevealDirect: () -> Unit,
+    onSelfAssess: (Boolean) -> Unit,
+    onToggleMnemonic: () -> Unit,
     onNext: () -> Unit,
     onToggleBookmark: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val shuffled = state.current ?: return
+    val question = shuffled.question
+    val graded = if (question.type == QuestionType.MC) state.submitted else state.selfAssessedCorrect != null
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -96,72 +110,82 @@ private fun QuizQuestionContent(
             style = MaterialTheme.typography.labelMedium
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Box(Modifier.fillMaxWidth()) {
-                Text(
-                    shuffled.question.question,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(end = 40.dp)
+        Box(Modifier.fillMaxWidth()) {
+            Text(
+                question.question,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(end = 40.dp)
+            )
+            IconButton(onClick = onToggleBookmark, modifier = Modifier.align(Alignment.TopEnd)) {
+                Icon(
+                    if (state.bookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                    contentDescription = "Lesezeichen"
                 )
-                IconButton(onClick = onToggleBookmark, modifier = Modifier.align(Alignment.TopEnd)) {
-                    Icon(
-                        if (state.bookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                        contentDescription = "Lesezeichen"
-                    )
-                }
             }
         }
 
-        shuffled.displayOptions.forEachIndexed { index, option ->
-            AnswerOption(
-                text = option,
-                selected = state.selectedIndex == index,
-                correct = index == shuffled.correctDisplayIndex,
-                answered = state.answered,
-                onClick = { onSelect(index) }
+        if (question.type == QuestionType.MC) {
+            Text(
+                "Mehrfachauswahl möglich - mindestens eine Antwort ist richtig.",
+                style = MaterialTheme.typography.bodySmall
             )
-        }
-
-        if (state.answered) {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Erklärung", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text(shuffled.question.explanation)
-                    if (shuffled.question.reference.isNotBlank()) {
-                        Text(shuffled.question.reference, style = MaterialTheme.typography.labelSmall)
+            shuffled.displayOptions.forEachIndexed { index, option ->
+                McOptionRow(
+                    text = option,
+                    checked = index in state.selectedIndices,
+                    correct = index in shuffled.correctDisplayIndices,
+                    submitted = state.submitted,
+                    onToggle = { onToggleOption(index) }
+                )
+            }
+            if (!state.submitted) {
+                Button(
+                    onClick = onSubmitMc,
+                    enabled = state.selectedIndices.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Prüfen") }
+            } else {
+                val allCorrect = state.selectedIndices == shuffled.correctDisplayIndices
+                ResultBanner(correct = allCorrect)
+            }
+        } else {
+            if (!state.submitted) {
+                Button(onClick = onRevealDirect, modifier = Modifier.fillMaxWidth()) {
+                    Text("Auflösung anzeigen")
+                }
+            } else {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Musterantwort", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Text(question.modelAnswer)
                     }
                 }
+                if (state.selfAssessedCorrect == null) {
+                    Text("Hattest du das richtig beantwortet?", style = MaterialTheme.typography.bodyMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(onClick = { onSelfAssess(true) }, modifier = Modifier.weight(1f)) {
+                            Text("Richtig")
+                        }
+                        OutlinedButton(onClick = { onSelfAssess(false) }, modifier = Modifier.weight(1f)) {
+                            Text("Falsch")
+                        }
+                    }
+                } else {
+                    ResultBanner(correct = state.selfAssessedCorrect)
+                }
             }
+        }
+
+        if (graded) {
+            MnemonicSection(
+                revealed = state.mnemonicRevealed,
+                mnemonic = question.mnemonic,
+                onToggle = onToggleMnemonic
+            )
             Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
                 Text(if (state.currentIndex + 1 >= state.questions.size) "Fertig" else "Weiter")
             }
         }
-    }
-}
-
-@Composable
-private fun AnswerOption(
-    text: String,
-    selected: Boolean,
-    correct: Boolean,
-    answered: Boolean,
-    onClick: () -> Unit
-) {
-    val containerColor = when {
-        !answered -> MaterialTheme.colorScheme.surface
-        correct -> Color(0xFF2E7D32)
-        selected && !correct -> Color(0xFFC62828)
-        else -> MaterialTheme.colorScheme.surface
-    }
-    val contentColor = if (answered && (correct || selected)) Color.White else MaterialTheme.colorScheme.onSurface
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = !answered) { onClick() },
-        colors = CardDefaults.cardColors(containerColor = containerColor, contentColor = contentColor)
-    ) {
-        Text(text, modifier = Modifier.padding(16.dp))
     }
 }
 

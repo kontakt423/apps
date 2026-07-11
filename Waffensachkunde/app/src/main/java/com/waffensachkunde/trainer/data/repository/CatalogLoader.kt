@@ -4,6 +4,7 @@ import android.content.Context
 import com.waffensachkunde.trainer.data.model.Category
 import com.waffensachkunde.trainer.data.model.Question
 import com.waffensachkunde.trainer.data.model.QuestionCatalog
+import com.waffensachkunde.trainer.data.model.QuestionType
 import org.json.JSONObject
 
 object CatalogLoader {
@@ -30,19 +31,31 @@ object CatalogLoader {
             val array = root.getJSONArray("questions")
             for (i in 0 until array.length()) {
                 val obj = array.getJSONObject(i)
-                val optionsArray = obj.getJSONArray("options")
+                val type = if (obj.getString("type") == "mc") QuestionType.MC else QuestionType.DIRECT
+
                 val options = buildList {
-                    for (j in 0 until optionsArray.length()) add(optionsArray.getString(j))
+                    val optionsArray = obj.optJSONArray("options")
+                    if (optionsArray != null) {
+                        for (j in 0 until optionsArray.length()) add(optionsArray.getString(j))
+                    }
                 }
+                val correctIndices = buildList {
+                    val correctArray = obj.optJSONArray("correctIndices")
+                    if (correctArray != null) {
+                        for (j in 0 until correctArray.length()) add(correctArray.getInt(j))
+                    }
+                }
+
                 add(
                     Question(
                         id = obj.getString("id"),
                         categoryId = obj.getString("categoryId"),
+                        type = type,
                         question = obj.getString("question"),
                         options = options,
-                        correctIndex = obj.getInt("correctIndex"),
-                        explanation = obj.getString("explanation"),
-                        reference = obj.optString("reference", "")
+                        correctIndices = correctIndices,
+                        modelAnswer = obj.optString("modelAnswer", ""),
+                        mnemonic = obj.optString("mnemonic", "")
                     )
                 )
             }

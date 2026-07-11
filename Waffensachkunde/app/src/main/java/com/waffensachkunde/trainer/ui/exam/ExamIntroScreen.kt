@@ -35,9 +35,9 @@ fun ExamIntroScreen(
                     "${ExamViewModel.EXAM_DURATION_SECONDS / 60} Minuten Zeit, " +
                     "mindestens 75 % richtige Antworten zum Bestehen."
             )
-            Text("Während der Prüfung wird dir keine sofortige Rückmeldung zu einzelnen Antworten angezeigt, wie im echten Prüfungsablauf. Du kannst zwischen Fragen wechseln und Antworten bis zur Abgabe ändern.")
+            Text("Bei Multiple-Choice-Fragen wird dir direkt nach dem Prüfen angezeigt, ob deine Auswahl richtig war. Bei Fragen mit Musterantwort siehst du nach der Auflösung die amtliche Musterantwort und schätzt selbst ein, ob du richtig lagst. Du kannst zwischen Fragen wechseln und Antworten bis zur Abgabe ändern.")
             Text(
-                "Hinweis: Die Fragen dieser App sind Übungsfragen und kein wortgleicher Abdruck des amtlichen Fragenkatalogs des Bundesverwaltungsamtes.",
+                "Hinweis: Die Fragen und Antworten stammen wortgetreu aus dem amtlichen Fragenkatalog für die Sachkundeprüfung (Stand 16.12.2024) des Bundesverwaltungsamtes. Die Eselsbrücken sind eigenständig erstellte Lernhilfen und nicht Teil des amtlichen Katalogs.",
                 style = MaterialTheme.typography.bodySmall
             )
             Button(onClick = onStart) { Text("Prüfung starten") }

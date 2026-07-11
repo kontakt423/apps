@@ -1,6 +1,5 @@
 package com.waffensachkunde.trainer.ui.exam
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,8 +26,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.waffensachkunde.trainer.data.model.QuestionType
+import com.waffensachkunde.trainer.ui.common.McOptionRow
+import com.waffensachkunde.trainer.ui.common.MnemonicSection
+import com.waffensachkunde.trainer.ui.common.ResultBanner
 
 @Composable
 fun ExamScreen(
@@ -43,7 +47,9 @@ fun ExamScreen(
     }
 
     if (state.phase == ExamPhase.FINISHED) return
-    val question = state.questions.getOrNull(state.currentIndex) ?: return
+    val shuffled = state.questions.getOrNull(state.currentIndex) ?: return
+    val question = shuffled.question
+    val answer = state.answers[state.currentIndex] ?: ExamAnswerState()
     val minutes = state.timeRemainingSeconds / 60
     val seconds = state.timeRemainingSeconds % 60
 
@@ -65,20 +71,67 @@ fun ExamScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Text("Frage ${state.currentIndex + 1} von ${state.questions.size}", style = MaterialTheme.typography.labelMedium)
-            Text(question.question.question, style = MaterialTheme.typography.titleLarge)
+            Text(question.question, style = MaterialTheme.typography.titleLarge)
 
-            val selected = state.answers[state.currentIndex]
-            question.displayOptions.forEachIndexed { index, option ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.selectAnswer(index) },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (selected == index) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+            if (question.type == QuestionType.MC) {
+                Text(
+                    "Mehrfachauswahl möglich - mindestens eine Antwort ist richtig.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                shuffled.displayOptions.forEachIndexed { index, option ->
+                    McOptionRow(
+                        text = option,
+                        checked = index in answer.selectedIndices,
+                        correct = index in shuffled.correctDisplayIndices,
+                        submitted = answer.submitted,
+                        onToggle = { viewModel.toggleMcOption(index) }
                     )
-                ) {
-                    Text(option, modifier = Modifier.padding(16.dp))
                 }
+                if (!answer.submitted) {
+                    Button(
+                        onClick = viewModel::submitMcCurrent,
+                        enabled = answer.selectedIndices.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Prüfen") }
+                } else {
+                    val allCorrect = answer.selectedIndices == shuffled.correctDisplayIndices
+                    ResultBanner(correct = allCorrect)
+                }
+            } else {
+                if (!answer.submitted) {
+                    Button(onClick = viewModel::revealDirectCurrent, modifier = Modifier.fillMaxWidth()) {
+                        Text("Auflösung anzeigen")
+                    }
+                } else {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Musterantwort", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                            Text(question.modelAnswer)
+                        }
+                    }
+                    if (answer.selfCorrect == null) {
+                        Text("Hattest du das richtig beantwortet?", style = MaterialTheme.typography.bodyMedium)
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Button(onClick = { viewModel.selfAssessCurrent(true) }, modifier = Modifier.weight(1f)) {
+                                Text("Richtig")
+                            }
+                            OutlinedButton(onClick = { viewModel.selfAssessCurrent(false) }, modifier = Modifier.weight(1f)) {
+                                Text("Falsch")
+                            }
+                        }
+                    } else {
+                        ResultBanner(correct = answer.selfCorrect)
+                    }
+                }
+            }
+
+            val graded = if (question.type == QuestionType.MC) answer.submitted else answer.selfCorrect != null
+            if (graded) {
+                MnemonicSection(
+                    revealed = answer.mnemonicRevealed,
+                    mnemonic = question.mnemonic,
+                    onToggle = viewModel::toggleMnemonicCurrent
+                )
             }
 
             Row(
@@ -97,18 +150,18 @@ fun ExamScreen(
                 }
             }
             TextButton(onClick = { showSubmitConfirm = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("Prüfung jetzt abgeben (${state.answers.size}/${state.questions.size} beantwortet)")
+                Text("Prüfung jetzt abgeben")
             }
         }
     }
 
     if (showSubmitConfirm) {
+        val unresolved = viewModel.unresolvedCount()
         AlertDialog(
             onDismissRequest = { showSubmitConfirm = false },
             title = { Text("Prüfung abgeben?") },
             text = {
-                val unanswered = state.questions.size - state.answers.size
-                Text(if (unanswered > 0) "Du hast noch $unanswered unbeantwortete Fragen. Trotzdem abgeben?" else "Möchtest du die Prüfung jetzt abgeben?")
+                Text(if (unresolved > 0) "Du hast noch $unresolved unbearbeitete Fragen. Trotzdem abgeben?" else "Möchtest du die Prüfung jetzt abgeben?")
             },
             confirmButton = {
                 TextButton(onClick = {

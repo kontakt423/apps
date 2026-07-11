@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.waffensachkunde.trainer.data.model.QuestionType
 
 @Composable
 fun ExamResultScreen(
@@ -54,8 +55,8 @@ fun ExamResultScreen(
                             "${state.correctCount} von ${state.questions.size} richtig (mind. ${state.passThreshold} erforderlich)",
                             color = Color.White
                         )
-                        if (state.unansweredCount > 0) {
-                            Text("${state.unansweredCount} Fragen unbeantwortet", color = Color.White)
+                        if (state.unresolvedCount > 0) {
+                            Text("${state.unresolvedCount} Fragen unbearbeitet", color = Color.White)
                         }
                     }
                 }
@@ -73,8 +74,15 @@ fun ExamResultScreen(
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(question.question, fontWeight = FontWeight.Bold)
-                            Text("Richtig: ${question.options[question.correctIndex]}")
-                            Text(question.explanation, style = MaterialTheme.typography.bodySmall)
+                            if (question.type == QuestionType.MC) {
+                                val correctOptions = question.correctIndices.mapNotNull { question.options.getOrNull(it) }
+                                Text("Richtig: ${correctOptions.joinToString("; ")}")
+                            } else {
+                                Text("Musterantwort: ${question.modelAnswer}")
+                            }
+                            if (question.mnemonic.isNotBlank()) {
+                                Text(question.mnemonic, style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }

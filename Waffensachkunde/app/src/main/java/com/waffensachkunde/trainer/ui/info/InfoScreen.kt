@@ -36,15 +36,16 @@ fun InfoScreen() {
 
             Text("Hinweis zum Fragenkatalog", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Der amtliche Fragenkatalog zur Sachkundeprüfung wird vom Bundesverwaltungsamt (BVA) " +
-                    "herausgegeben und regelmäßig aktualisiert. Die in dieser App enthaltenen Fragen " +
-                    "sind eigenständig formulierte Übungsfragen, die sich an denselben Themengebieten " +
-                    "orientieren (waffenrechtliche und waffentechnische Kenntnisse gemäß §§ 1, 2 WaffG " +
-                    "und AWaffV). Es handelt sich nicht um einen wortgleichen Abdruck des amtlichen Katalogs."
+                "Die Fragen, Multiple-Choice-Antworten und Musterantworten dieser App sind wortgetreu " +
+                    "aus dem amtlichen Fragenkatalog für die Sachkundeprüfung gemäß § 7 WaffG übernommen, " +
+                    "herausgegeben vom Bundesverwaltungsamt (BVA) im Auftrag des Bundesministeriums des " +
+                    "Innern und für Heimat (Stand: 16.12.2024). Die Eselsbrücken zu jeder Frage sind " +
+                    "eigenständig erstellte Lernhilfen und nicht Teil des amtlichen Katalogs."
             )
             Text(
                 "Für die verbindliche Prüfungsvorbereitung sollte zusätzlich der jeweils aktuelle " +
-                    "amtliche Fragenkatalog des Bundesverwaltungsamtes herangezogen werden."
+                    "amtliche Fragenkatalog des Bundesverwaltungsamtes herangezogen werden, da dieser " +
+                    "regelmäßig aktualisiert wird."
             )
 
             Text("Rechtlicher Hinweis", style = MaterialTheme.typography.titleMedium)

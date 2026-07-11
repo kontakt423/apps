@@ -4,8 +4,9 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.waffensachkunde.trainer.data.model.Question
+import com.waffensachkunde.trainer.data.model.QuestionType
 import com.waffensachkunde.trainer.data.model.ShuffledQuestion
-import com.waffensachkunde.trainer.data.model.shuffled
+import com.waffensachkunde.trainer.data.model.shuffledForDisplay
 import com.waffensachkunde.trainer.data.repository.QuestionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,13 +22,17 @@ data class QuizUiState(
     val questions: List<Question> = emptyList(),
     val currentIndex: Int = 0,
     val current: ShuffledQuestion? = null,
-    val selectedIndex: Int? = null,
-    val answered: Boolean = false,
+    val selectedIndices: Set<Int> = emptySet(),
+    val submitted: Boolean = false,
+    val selfAssessedCorrect: Boolean? = null,
+    val mnemonicRevealed: Boolean = false,
     val bookmarked: Boolean = false,
     val sessionCorrect: Int = 0,
     val finished: Boolean = false,
     val empty: Boolean = false
-)
+) {
+    val answered: Boolean get() = submitted
+}
 
 class QuizViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -64,23 +69,60 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
                     title = title,
                     questions = questions,
                     currentIndex = 0,
-                    current = questions[0].shuffled(),
-                    selectedIndex = null,
-                    answered = false,
+                    current = questions[0].shuffledForDisplay(),
+                    selectedIndices = emptySet(),
+                    submitted = false,
+                    selfAssessedCorrect = null,
+                    mnemonicRevealed = false,
                     bookmarked = false
                 )
             }
         }
     }
 
-    fun selectAnswer(index: Int) {
+    fun toggleOption(index: Int) {
         val state = _uiState.value
-        if (state.answered || state.current == null) return
-        val correct = index == state.current.correctDisplayIndex
-        _uiState.update { it.copy(selectedIndex = index, answered = true, sessionCorrect = it.sessionCorrect + if (correct) 1 else 0) }
-        viewModelScope.launch {
-            repository.recordAnswer(state.current.question.id, correct)
+        if (state.submitted) return
+        _uiState.update {
+            val newSelection = if (index in it.selectedIndices) {
+                it.selectedIndices - index
+            } else {
+                it.selectedIndices + index
+            }
+            it.copy(selectedIndices = newSelection)
         }
+    }
+
+    fun submitMc() {
+        val state = _uiState.value
+        val shuffled = state.current ?: return
+        if (state.submitted || state.selectedIndices.isEmpty()) return
+        val correct = state.selectedIndices == shuffled.correctDisplayIndices
+        _uiState.update { it.copy(submitted = true, sessionCorrect = it.sessionCorrect + if (correct) 1 else 0) }
+        viewModelScope.launch { repository.recordAnswer(shuffled.question.id, correct) }
+    }
+
+    fun revealDirect() {
+        val state = _uiState.value
+        if (state.submitted) return
+        _uiState.update { it.copy(submitted = true) }
+    }
+
+    fun selfAssess(correct: Boolean) {
+        val state = _uiState.value
+        val question = state.current?.question ?: return
+        if (!state.submitted || state.selfAssessedCorrect != null) return
+        _uiState.update {
+            it.copy(
+                selfAssessedCorrect = correct,
+                sessionCorrect = it.sessionCorrect + if (correct) 1 else 0
+            )
+        }
+        viewModelScope.launch { repository.recordAnswer(question.id, correct) }
+    }
+
+    fun toggleMnemonic() {
+        _uiState.update { it.copy(mnemonicRevealed = !it.mnemonicRevealed) }
     }
 
     fun toggleBookmark() {
@@ -99,11 +141,19 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update {
             it.copy(
                 currentIndex = nextIndex,
-                current = it.questions[nextIndex].shuffled(),
-                selectedIndex = null,
-                answered = false,
+                current = it.questions[nextIndex].shuffledForDisplay(),
+                selectedIndices = emptySet(),
+                submitted = false,
+                selfAssessedCorrect = null,
+                mnemonicRevealed = false,
                 bookmarked = false
             )
         }
+    }
+
+    /** True once the current question has been graded (MC submitted, or DIRECT self-assessed). */
+    fun isGraded(state: QuizUiState): Boolean {
+        val question = state.current?.question ?: return false
+        return if (question.type == QuestionType.MC) state.submitted else state.selfAssessedCorrect != null
     }
 }

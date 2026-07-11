@@ -4,40 +4,62 @@ Android-App (Kotlin, Jetpack Compose) zum Lernen für die Sachkundeprüfung nach
 **§ 7 Waffengesetz (WaffG)** im Quizformat, mit Lernmodus nach Themengebieten
 und einer Prüfungssimulation.
 
+## Fragenkatalog
+
+Die App enthält **574 Fragen** aus dem amtlichen *Fragenkatalog für die
+Sachkundeprüfung (gemäß § 7 WaffG)*, herausgegeben vom
+**Bundesverwaltungsamt** im Auftrag des Bundesministeriums des Innern und für
+Heimat (Stand: 16.12.2024). Fragen, Multiple-Choice-Antworten und
+Musterantworten sind wortgetreu aus dem amtlichen Katalog übernommen.
+
+| Kategorie | Bereich | Fragen |
+| --- | --- | --- |
+| Begriffe des Waffenrechts | Waffenrecht | 90 |
+| Rechte und Pflichten | Waffenrecht | 154 |
+| Kennzeichnung von Schusswaffen und Munition | Waffenrecht | 34 |
+| Aufbewahrung von Schusswaffen und Munition | Waffenrecht | 23 |
+| Notwehr und Notstand | Waffenrecht | 43 |
+| Waffentechnik (Waffen, Munition, Geschosse) | Waffentechnik | 92 |
+| Handhabung von Schusswaffen und Munition | Waffentechnik | 49 |
+| Not- und Seenotsignalmittel | Sonstiges | 89 |
+
+Eine Frage des amtlichen Katalogs (Nr. 3.05) wurde ausgeschlossen, da ihre
+Antwortoptionen nur aus nicht darstellbaren Beschusszeichen-Grafiken ohne
+Text bestehen und daher im Quizformat nicht sinnvoll nutzbar sind.
+
+Jede Frage ist zusätzlich mit einer **Eselsbrücke** versehen — einer
+eigenständig erstellten Lernhilfe, die *nicht* Teil des amtlichen Katalogs
+ist.
+
+Der amtliche Fragenkatalog wird vom Bundesverwaltungsamt in unregelmäßigen
+Abständen aktualisiert. Für die verbindliche Prüfungsvorbereitung sollte
+zusätzlich der jeweils aktuelle amtliche Fragenkatalog herangezogen werden.
+
 ## Funktionen
 
-- **Lernmodus**: 19 Themengebiete (Waffenrecht und Waffentechnik), jede Frage
-  mit vier Antwortoptionen, sofortiger Rückmeldung und Erklärung samt
-  Rechtsgrundlage.
-- **Prüfungssimulation**: 100 Fragen aus dem gesamten Fragenpool, 60 Minuten
-  Zeit, mindestens 75 % richtige Antworten zum Bestehen — angelehnt an den
-  Ablauf der echten Sachkundeprüfung. Während der Prüfung gibt es (wie im
-  echten Ablauf) keine sofortige Rückmeldung pro Frage; am Ende folgt eine
-  Auswertung mit Liste der falsch beantworteten Fragen samt Erklärung.
+- **Lernmodus**: Fragen nach Themengebiet oder gemischt über alle 574 Fragen
+  üben.
+  - **Multiple-Choice-Fragen** (Mehrfachauswahl möglich, mindestens eine
+    Antwort ist immer richtig): Nach Antippen von "Prüfen" wird sofort
+    angezeigt, ob die Auswahl vollständig richtig war.
+  - **Fragen mit Musterantwort**: Es wird zunächst nur die Frage gezeigt. Ein
+    "Auflösung anzeigen"-Button blendet die amtliche Musterantwort ein.
+    Danach schätzt man selbst ein, ob man richtig oder falsch geantwortet
+    hat — diese Selbsteinschätzung zählt für das Ergebnis.
+  - Nach jeder beantworteten Frage (unabhängig von richtig/falsch) kann über
+    einen Toggle die **Eselsbrücke** eingeblendet werden.
+  - Fragen können mit einem Lesezeichen markiert werden.
+- **Prüfungssimulation**: 100 zufällig gezogene Fragen aus dem gesamten
+  Fragenpool, 60 Minuten Zeit, mindestens 75 % richtige Antworten zum
+  Bestehen — angelehnt an den Ablauf der echten Sachkundeprüfung. MC-Fragen
+  werden direkt nach dem Prüfen ausgewertet, Fragen mit Musterantwort per
+  Selbsteinschätzung wie im Lernmodus. Am Ende folgt eine Auswertung mit
+  Liste der falsch beantworteten Fragen samt Musterantwort/richtiger
+  Antwort und Eselsbrücke.
 - **Lesezeichen**: Fragen im Lernmodus markieren und später gesammelt üben.
 - **Statistik**: Fortschritt und Trefferquote je Themengebiet, Verlauf aller
   Prüfungssimulationen, Zurücksetzen des Fortschritts.
 - Läuft vollständig offline, keine Internetberechtigung erforderlich.
-
-## Wichtiger Hinweis zum Fragenkatalog
-
-Der amtliche Fragenkatalog zur Sachkundeprüfung nach § 7 WaffG wird vom
-**Bundesverwaltungsamt (BVA)** herausgegeben und in regelmäßigen Abständen
-aktualisiert (öffentlich einsehbar auf bva.bund.de). Aus dieser
-Entwicklungsumgebung heraus war ein automatisierter Abruf der aktuellen
-amtlichen PDF-Fassung nicht möglich (die Zielseiten blockieren automatisierte
-Anfragen). Die in `app/src/main/assets/questions.json` enthaltenen 133 Fragen
-sind daher **eigenständig formulierte Übungsfragen**, die sich inhaltlich und
-strukturell an den Themengebieten des amtlichen Katalogs orientieren
-(waffenrechtliche und waffentechnische Kenntnisse gemäß §§ 1, 2 WaffG und
-AWaffV) — **kein wortgleicher Abdruck** des amtlichen Katalogs.
-
-Für eine 1:1-Abdeckung des aktuellen amtlichen Wortlauts empfiehlt es sich,
-den jeweils aktuellen Fragenkatalog direkt bei bva.bund.de zu laden und die
-Fragen im unten beschriebenen JSON-Format zu ergänzen oder zu ersetzen.
-Alle Inhalte der App dienen ausschließlich der Lernunterstützung und
-ersetzen keine Rechtsberatung; maßgeblich sind stets die aktuellen
-gesetzlichen Vorschriften und der amtliche Fragenkatalog.
 
 ### Fragenkatalog aktualisieren
 
@@ -45,27 +67,38 @@ Die Datei `app/src/main/assets/questions.json` hat folgenden Aufbau:
 
 ```json
 {
+  "catalogVersion": "amtlich-2024-12-16",
+  "note": "...",
   "categories": [
-    { "id": "wr-begriffe", "name": "Waffenrechtliche Begriffe", "section": "Waffenrecht" }
+    { "id": "kap1-begriffe", "name": "Begriffe des Waffenrechts", "section": "Waffenrecht" }
   ],
   "questions": [
     {
-      "id": "wr-begriffe-1",
-      "categoryId": "wr-begriffe",
-      "question": "Fragetext",
-      "options": ["richtige Antwort", "falsch 1", "falsch 2", "falsch 3"],
-      "correctIndex": 0,
-      "explanation": "Erklärung der richtigen Antwort",
-      "reference": "§ 1 WaffG"
+      "id": "1.01",
+      "categoryId": "kap1-begriffe",
+      "type": "direct",
+      "question": "Was regelt das Waffengesetz?",
+      "modelAnswer": "Das Waffengesetz regelt den Umgang mit Waffen oder Munition ...",
+      "mnemonic": "WaffG = Waffen + Gesetz: ..."
+    },
+    {
+      "id": "1.02",
+      "categoryId": "kap1-begriffe",
+      "type": "mc",
+      "question": "Umgang mit einer Schusswaffe hat…",
+      "options": ["wer damit schießt.", "wer die Waffe verbringt oder mitnimmt.", "..."],
+      "correctIndices": [0, 1, 2],
+      "mnemonic": "..."
     }
   ]
 }
 ```
 
-Die erste Option (`correctIndex`) muss die richtige Antwort sein; die App
-mischt die Reihenfolge der Antwortoptionen bei jeder Anzeige zufällig. Neue
-oder aktualisierte Fragen können einfach ergänzt bzw. ersetzt werden, ohne
-Code ändern zu müssen.
+Fragen vom Typ `mc` haben `options` und `correctIndices` (mehrere korrekte
+Indizes möglich); die App mischt die Reihenfolge der Antwortoptionen bei
+jeder Anzeige zufällig. Fragen vom Typ `direct` haben stattdessen eine
+`modelAnswer`. Neue oder aktualisierte Fragen können einfach ergänzt bzw.
+ersetzt werden, ohne Code ändern zu müssen.
 
 ## Architektur
 
