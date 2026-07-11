@@ -42,41 +42,57 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<QuizUiState> = _uiState.asStateFlow()
 
     private var started = false
+    private var currentMode: QuizMode? = null
+    private var currentCategoryId: String? = null
 
     fun start(mode: QuizMode, categoryId: String?) {
         if (started) return
         started = true
-        viewModelScope.launch {
-            val questions = when (mode) {
-                QuizMode.LEARN_CATEGORY -> repository.questionsForCategory(categoryId.orEmpty()).shuffled()
-                QuizMode.LEARN_ALL -> repository.allQuestions.shuffled()
-                QuizMode.BOOKMARKS -> repository.getBookmarkedQuestions().shuffled()
-                QuizMode.WRONG_ANSWERS -> repository.getFrequentlyWrongQuestions().shuffled()
-            }
-            val title = when (mode) {
-                QuizMode.LEARN_CATEGORY -> repository.categories.find { it.id == categoryId }?.name.orEmpty()
-                QuizMode.LEARN_ALL -> "Alle Fragen"
-                QuizMode.BOOKMARKS -> "Lesezeichen"
-                QuizMode.WRONG_ANSWERS -> "Wiederholung: Fehler"
-            }
-            if (questions.isEmpty()) {
-                _uiState.update { it.copy(loading = false, empty = true, title = title) }
-                return@launch
-            }
-            _uiState.update {
-                it.copy(
-                    loading = false,
-                    title = title,
-                    questions = questions,
-                    currentIndex = 0,
-                    current = questions[0].shuffledForDisplay(),
-                    selectedIndices = emptySet(),
-                    submitted = false,
-                    selfAssessedCorrect = null,
-                    mnemonicRevealed = false,
-                    bookmarked = false
-                )
-            }
+        currentMode = mode
+        currentCategoryId = categoryId
+        viewModelScope.launch { loadBatch(mode, categoryId) }
+    }
+
+    /** Starts a fresh round of questions in the same mode/category (e.g. after finishing a round of 10). */
+    fun nextRound() {
+        val mode = currentMode ?: return
+        viewModelScope.launch { loadBatch(mode, currentCategoryId) }
+    }
+
+    private suspend fun loadBatch(mode: QuizMode, categoryId: String?) {
+        _uiState.update { it.copy(loading = true, finished = false) }
+        val questions = when (mode) {
+            QuizMode.LEARN_CATEGORY -> repository.drawLearnBatch(repository.questionsForCategory(categoryId.orEmpty()))
+            QuizMode.LEARN_ALL -> repository.drawLearnBatch(repository.allQuestions)
+            QuizMode.BOOKMARKS -> repository.getBookmarkedQuestions().shuffled()
+            QuizMode.WRONG_ANSWERS -> repository.getFrequentlyWrongQuestions().shuffled()
+        }
+        val title = when (mode) {
+            QuizMode.LEARN_CATEGORY -> repository.categories.find { it.id == categoryId }?.name.orEmpty()
+            QuizMode.LEARN_ALL -> "Alle Fragen"
+            QuizMode.BOOKMARKS -> "Lesezeichen"
+            QuizMode.WRONG_ANSWERS -> "Wiederholung: Fehler"
+        }
+        if (questions.isEmpty()) {
+            _uiState.update { it.copy(loading = false, empty = true, title = title) }
+            return
+        }
+        _uiState.update {
+            it.copy(
+                loading = false,
+                empty = false,
+                title = title,
+                questions = questions,
+                currentIndex = 0,
+                current = questions[0].shuffledForDisplay(),
+                selectedIndices = emptySet(),
+                submitted = false,
+                selfAssessedCorrect = null,
+                mnemonicRevealed = false,
+                bookmarked = false,
+                sessionCorrect = 0,
+                finished = false
+            )
         }
     }
 

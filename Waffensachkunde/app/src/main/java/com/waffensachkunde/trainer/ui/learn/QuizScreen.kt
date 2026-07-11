@@ -61,6 +61,7 @@ fun QuizScreen(
                 correct = state.sessionCorrect,
                 total = state.questions.size,
                 onBack = onBack,
+                onNextRound = viewModel::nextRound,
                 modifier = Modifier.padding(padding)
             )
             state.current != null -> QuizQuestionContent(
@@ -194,6 +195,7 @@ private fun QuizFinishedContent(
     correct: Int,
     total: Int,
     onBack: () -> Unit,
+    onNextRound: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -204,6 +206,7 @@ private fun QuizFinishedContent(
     ) {
         Text("Runde abgeschlossen", style = MaterialTheme.typography.headlineSmall)
         Text("Du hast $correct von $total Fragen richtig beantwortet.")
-        Button(onClick = onBack) { Text("Zurück") }
+        Button(onClick = onNextRound, modifier = Modifier.fillMaxWidth()) { Text("Nächste Runde (10 Fragen)") }
+        OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Zurück") }
     }
 }

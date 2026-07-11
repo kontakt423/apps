@@ -38,7 +38,10 @@ zusätzlich der jeweils aktuelle amtliche Fragenkatalog herangezogen werden.
 ## Funktionen
 
 - **Lernmodus**: Fragen nach Themengebiet oder gemischt über alle 574 Fragen
-  üben.
+  üben, in Runden von je **10 Fragen**. Jede Runde mischt neue/ungeübte
+  Fragen mit Fragen, die zuvor gehäuft falsch beantwortet wurden, damit
+  Fehler gezielt wiederholt werden. Nach einer Runde kann direkt die
+  nächste gestartet werden.
   - **Multiple-Choice-Fragen** (Mehrfachauswahl möglich, mindestens eine
     Antwort ist immer richtig): Nach Antippen von "Prüfen" wird sofort
     angezeigt, ob die Auswahl vollständig richtig war.

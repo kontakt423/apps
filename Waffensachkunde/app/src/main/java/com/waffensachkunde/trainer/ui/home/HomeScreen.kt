@@ -71,7 +71,7 @@ fun HomeScreen(
             HomeActionCard(
                 icon = Icons.Filled.MenuBook,
                 title = "Lernmodus",
-                description = "Fragen nach Themen üben, mit sofortiger Erklärung.",
+                description = "Runden mit je 10 Fragen üben, inkl. Wiederholung häufiger Fehler.",
                 onClick = onNavigateLearn
             )
             HomeActionCard(

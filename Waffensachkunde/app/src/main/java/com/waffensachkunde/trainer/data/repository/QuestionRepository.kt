@@ -101,9 +101,39 @@ class QuestionRepository(context: Context) {
     fun drawExamQuestions(count: Int = EXAM_QUESTION_COUNT): List<Question> =
         catalog.questions.shuffled().take(minOf(count, catalog.questions.size))
 
+    /**
+     * Draws a round of [count] learn-mode questions from [pool]: mostly fresh/unseen questions,
+     * with a share of questions the user has repeatedly answered wrong mixed back in for repetition.
+     */
+    suspend fun drawLearnBatch(pool: List<Question>, count: Int = LEARN_BATCH_SIZE): List<Question> {
+        if (pool.size <= count) return pool.shuffled()
+
+        val stats = statDao.observeAll().first().associateBy { it.questionId }
+        fun wrongScore(q: Question): Int {
+            val stat = stats[q.id] ?: return 0
+            return stat.timesWrong - stat.timesCorrect
+        }
+
+        val wrongPool = pool.filter { wrongScore(it) > 0 }.sortedByDescending { wrongScore(it) }
+        val wrongSlots = ((count * LEARN_REPEAT_SHARE).toInt()).coerceAtMost(wrongPool.size)
+        val wrongSelection = wrongPool.take((wrongSlots * 2).coerceAtLeast(wrongSlots)).shuffled().take(wrongSlots)
+
+        val usedIds = wrongSelection.map { it.id }.toSet()
+        val freshSelection = pool.filterNot { it.id in usedIds }.shuffled().take(count - wrongSelection.size)
+
+        val combined = (wrongSelection + freshSelection).toMutableList()
+        if (combined.size < count) {
+            val stillUsed = combined.map { it.id }.toSet()
+            combined += pool.filterNot { it.id in stillUsed }.shuffled().take(count - combined.size)
+        }
+        return combined.shuffled()
+    }
+
     companion object {
         const val EXAM_QUESTION_COUNT = 100
         const val EXAM_PASS_THRESHOLD = 75
+        const val LEARN_BATCH_SIZE = 10
+        const val LEARN_REPEAT_SHARE = 0.4
 
         @Volatile
         private var instance: QuestionRepository? = null
