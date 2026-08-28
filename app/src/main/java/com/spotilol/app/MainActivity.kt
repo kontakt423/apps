@@ -9,6 +9,8 @@ import android.os.Bundle
 import android.os.IBinder
 import android.view.View
 import android.view.WindowManager
+import android.webkit.CookieManager
+import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -76,10 +78,26 @@ class MainActivity : AppCompatActivity(), WebAppBridge.Listener {
         binding.webView.configure()
         binding.webView.addJavascriptInterface(WebAppBridge(this), WebAppBridge.NAME)
 
+        // Spotify's Web Player streams DRM-protected (Widevine/EME) audio. Without
+        // granting PROTECTED_MEDIA_ID the player shows "Wiedergabe deaktiviert".
+        // Cookies (incl. third-party) are required for the login session.
+        CookieManager.getInstance().apply {
+            setAcceptCookie(true)
+            setAcceptThirdPartyCookies(binding.webView, true)
+        }
+
         binding.webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 binding.progress.progress = newProgress
                 binding.progress.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
+            }
+
+            override fun onPermissionRequest(request: PermissionRequest) {
+                // Grant only the DRM/protected-media permission the player needs.
+                val protected = request.resources.filter {
+                    it == PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID
+                }.toTypedArray()
+                if (protected.isNotEmpty()) request.grant(protected) else request.deny()
             }
         }
 

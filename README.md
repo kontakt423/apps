@@ -119,6 +119,23 @@ buildConfigField("String", "UPDATE_REPO", "\"lyssadev/Spotilol\"")
 
 Point it at your own `owner/repo` if you publish your own releases.
 
+## Troubleshooting
+
+**"Wiedergabe deaktiviert" / "Playback disabled".** Spotify streams
+DRM-protected audio via Widevine (EME). An Android `WebView` only plays it when
+the app grants the `PROTECTED_MEDIA_ID` permission, so the app overrides
+`WebChromeClient.onPermissionRequest` and grants it (see `MainActivity`). If you
+still hit this:
+
+- Update **Android System WebView** and **Chrome** from the Play Store — the
+  WebView provides the Widevine (usually L3) CDM.
+- Ensure cookies are enabled (the app enables first- and third-party cookies for
+  the login session) and that you are **not** running a WebView with DRM/EME
+  disabled by a privacy/de-Googled ROM. On such ROMs Widevine may be missing
+  entirely and DRM playback cannot work.
+- Give the device a moment on first playback: Widevine may need to provision
+  itself over the network once.
+
 ## Attribution
 
 Concept and feature set inspired by
