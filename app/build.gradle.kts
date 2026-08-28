@@ -24,7 +24,10 @@ android {
         versionName = "1.0.0"
 
         // Used by the update checker (GitHub Releases API). No Firebase Remote Config.
-        buildConfigField("String", "UPDATE_REPO", "\"lyssadev/Spotilol\"")
+        // Points at THIS project's own repo so it checks your releases, not the
+        // upstream original's. With no releases published yet, the check simply
+        // finds nothing and no "update available" dialog is shown.
+        buildConfigField("String", "UPDATE_REPO", "\"kontakt423/apps\"")
     }
 
     buildTypes {
