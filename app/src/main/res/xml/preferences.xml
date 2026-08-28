@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="@string/pref_cat_appearance">
+        <SwitchPreferenceCompat
+            android:key="amoled_mode"
+            android:title="@string/pref_amoled_title"
+            android:summary="@string/pref_amoled_summary"
+            android:defaultValue="false" />
+        <SwitchPreferenceCompat
+            android:key="keep_screen_on"
+            android:title="@string/pref_keep_screen_title"
+            android:summary="@string/pref_keep_screen_summary"
+            android:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_cat_playback">
+        <SwitchPreferenceCompat
+            android:key="adblock_enabled"
+            android:title="@string/pref_adblock_title"
+            android:summary="@string/pref_adblock_summary"
+            android:defaultValue="true" />
+        <SwitchPreferenceCompat
+            android:key="autoplay_enabled"
+            android:title="@string/pref_autoplay_title"
+            android:summary="@string/pref_autoplay_summary"
+            android:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_cat_updates">
+        <SwitchPreferenceCompat
+            android:key="auto_update"
+            android:title="@string/pref_auto_update_title"
+            android:summary="@string/pref_auto_update_summary"
+            android:defaultValue="true" />
+        <Preference
+            android:key="check_now"
+            android:title="@string/pref_check_now_title"
+            android:summary="@string/pref_check_now_summary" />
+    </PreferenceCategory>
+</PreferenceScreen>
