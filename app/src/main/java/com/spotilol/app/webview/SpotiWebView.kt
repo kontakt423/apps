@@ -25,9 +25,13 @@ class SpotiWebView @JvmOverloads constructor(
             cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
             // Use an up-to-date desktop-ish UA so Spotify serves the full player.
             userAgentString = DESKTOP_UA
+            // Fit the wide desktop layout to the screen, and allow pinch-zoom so
+            // the smaller desktop UI stays readable on a phone.
             loadWithOverviewMode = true
             useWideViewPort = true
-            setSupportZoom(false)
+            setSupportZoom(true)
+            builtInZoomControls = true
+            displayZoomControls = false
         }
     }
 
@@ -52,8 +56,12 @@ class SpotiWebView @JvmOverloads constructor(
 
     companion object {
         const val PLAYER_URL = "https://open.spotify.com/"
+
+        // A pure DESKTOP user agent (Windows/Chrome, no "Android"/"Mobile") makes
+        // Spotify serve the full PC web player, which offers real previous-track
+        // skipping and the complete desktop control set — as if streaming from a PC.
         private const val DESKTOP_UA =
-            "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) " +
-                "Chrome/124.0.0.0 Mobile Safari/537.36"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     }
 }
