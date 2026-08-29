@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">Spotilol</string>
+    <string name="settings_title">Settings</string>
+
+    <string name="pref_cat_appearance">Appearance</string>
+    <string name="pref_amoled_title">AMOLED pure-black mode</string>
+    <string name="pref_amoled_summary">Use a pure black background to save battery on OLED screens</string>
+    <string name="pref_keep_screen_title">Keep screen on while playing</string>
+    <string name="pref_keep_screen_summary">Prevent the display from sleeping during playback</string>
+
+    <string name="pref_cat_playback">Playback</string>
+    <string name="pref_adblock_title">Block audio ads</string>
+    <string name="pref_adblock_summary">Automatically skip and mute Spotify audio ads via injected script</string>
+    <string name="pref_autoplay_title">Autoplay similar tracks</string>
+    <string name="pref_autoplay_summary">Continue playing related songs when a playlist ends</string>
+    <string name="pref_desktop_title">Desktop mode (full library)</string>
+    <string name="pref_desktop_summary">Load the desktop web player so you can browse your library and playlists. Trade-off: playback can be less reliable than in the default mobile player. Restart or reopen the app after changing.</string>
+
+    <string name="pref_cat_updates">Updates</string>
+    <string name="pref_auto_update_title">Check for updates automatically</string>
+    <string name="pref_auto_update_summary">Check the GitHub Releases page once per day</string>
+    <string name="pref_check_now_title">Check for updates now</string>
+    <string name="pref_check_now_summary">Query the latest release manually</string>
+
+    <string name="update_available">Update available: %1$s</string>
+    <string name="update_none">You are on the latest version</string>
+    <string name="update_failed">Update check failed</string>
+    <string name="update_download">Download</string>
+    <string name="update_later">Later</string>
+
+    <string name="notif_channel_playback">Playback</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_reload">Reload</string>
+    <string name="action_back">Back</string>
+
+    <string name="menu_open">Menu</string>
+    <string name="widget_name">Spotilol Player</string>
+</resources>
