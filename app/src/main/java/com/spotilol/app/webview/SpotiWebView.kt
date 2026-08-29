@@ -23,15 +23,11 @@ class SpotiWebView @JvmOverloads constructor(
             databaseEnabled = true
             mediaPlaybackRequiresUserGesture = false
             cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
-            // Use an up-to-date desktop-ish UA so Spotify serves the full player.
-            userAgentString = DESKTOP_UA
-            // Fit the wide desktop layout to the screen, and allow pinch-zoom so
-            // the smaller desktop UI stays readable on a phone.
+            // Mobile UA: serves the touch player that plays reliably in a WebView.
+            userAgentString = MOBILE_UA
             loadWithOverviewMode = true
             useWideViewPort = true
-            setSupportZoom(true)
-            builtInZoomControls = true
-            displayZoomControls = false
+            setSupportZoom(false)
         }
     }
 
@@ -57,11 +53,13 @@ class SpotiWebView @JvmOverloads constructor(
     companion object {
         const val PLAYER_URL = "https://open.spotify.com/"
 
-        // A pure DESKTOP user agent (Windows/Chrome, no "Android"/"Mobile") makes
-        // Spotify serve the full PC web player, which offers real previous-track
-        // skipping and the complete desktop control set — as if streaming from a PC.
-        private const val DESKTOP_UA =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        // A MOBILE (Android/Chrome) user agent serves the touch web player, which
+        // is the variant that actually plays back reliably inside an Android
+        // WebView. The desktop player, while it exposes more controls, does not
+        // start playback reliably in a WebView — so the mobile player is the
+        // correct default (this is also what the original Spotilol uses).
+        private const val MOBILE_UA =
+            "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) " +
+                "Chrome/124.0.0.0 Mobile Safari/537.36"
     }
 }
