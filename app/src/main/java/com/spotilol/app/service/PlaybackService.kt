@@ -19,7 +19,9 @@ import androidx.media.app.NotificationCompat.MediaStyle
 import androidx.media.session.MediaButtonReceiver
 import com.spotilol.app.MainActivity
 import com.spotilol.app.R
+import com.spotilol.app.util.Prefs
 import com.spotilol.app.webview.PlayerState
+import com.spotilol.app.widget.SpotilolWidget
 
 /**
  * Foreground service that mirrors the web player into an Android MediaSession and
@@ -100,6 +102,10 @@ class PlaybackService : Service() {
         )
 
         notificationManager().notify(NOTIF_ID, buildNotification(null))
+
+        // Mirror state to the home-screen widget.
+        Prefs(this).saveNowPlaying(state.title, state.artist, state.playing)
+        SpotilolWidget.refresh(this)
     }
 
     private fun buildNotification(art: Bitmap?): Notification {

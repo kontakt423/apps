@@ -22,6 +22,8 @@ configuration**.
   account).
 - **Native MediaSession + notification** — play / pause / next / previous from
   the lock screen, Bluetooth devices and Wear OS.
+- **Home-screen widget** — shows the current track and play / pause / prev /
+  next buttons that drive the same MediaSession; tap the track to open the app.
 - **Client-side audio-ad handling** — detects ads in the player DOM, mutes all
   media elements and fast-forwards through them. No proxy or certificate needed.
 - **AMOLED pure-black mode**, **keep-screen-on** during playback.

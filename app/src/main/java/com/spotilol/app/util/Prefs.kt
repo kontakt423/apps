@@ -24,6 +24,19 @@ class Prefs(context: Context) {
         get() = sp.getLong(KEY_LAST_UPDATE_CHECK, 0L)
         set(value) = sp.edit().putLong(KEY_LAST_UPDATE_CHECK, value).apply()
 
+    // --- Last known "now playing" state, mirrored for the home-screen widget ---
+    val npTitle: String get() = sp.getString(KEY_NP_TITLE, "") ?: ""
+    val npArtist: String get() = sp.getString(KEY_NP_ARTIST, "") ?: ""
+    val npPlaying: Boolean get() = sp.getBoolean(KEY_NP_PLAYING, false)
+
+    fun saveNowPlaying(title: String, artist: String, playing: Boolean) {
+        sp.edit()
+            .putString(KEY_NP_TITLE, title)
+            .putString(KEY_NP_ARTIST, artist)
+            .putBoolean(KEY_NP_PLAYING, playing)
+            .apply()
+    }
+
     companion object {
         const val KEY_AMOLED = "amoled_mode"
         const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
@@ -31,5 +44,8 @@ class Prefs(context: Context) {
         const val KEY_AUTOPLAY = "autoplay_enabled"
         const val KEY_AUTO_UPDATE = "auto_update"
         const val KEY_LAST_UPDATE_CHECK = "last_update_check"
+        const val KEY_NP_TITLE = "np_title"
+        const val KEY_NP_ARTIST = "np_artist"
+        const val KEY_NP_PLAYING = "np_playing"
     }
 }
