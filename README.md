@@ -22,8 +22,15 @@ configuration**.
   account).
 - **Native MediaSession + notification** — play / pause / next / previous from
   the lock screen, Bluetooth devices and Wear OS.
-- **Home-screen widget** — shows the current track and play / pause / prev /
-  next buttons that drive the same MediaSession; tap the track to open the app.
+- **Home-screen widget** — shows the current track, **album cover** and
+  play / pause / prev / next buttons that drive the playback service; tap the
+  track to open the app. (Controls act while the app/player is alive in the
+  background; if it was fully swiped away, a control tap opens the app.)
+- **Desktop mode (optional)** — a settings toggle that loads the full desktop
+  web player so you can browse your **library and playlists**. Spotify's mobile
+  web player intentionally restricts library browsing ("get the app"); the
+  desktop player lifts that, at the cost of less reliable in-WebView playback.
+  Default stays the mobile player.
 - **Client-side audio-ad handling** — detects ads in the player DOM, mutes all
   media elements and fast-forwards through them. No proxy or certificate needed.
 - **AMOLED pure-black mode**, **keep-screen-on** during playback.

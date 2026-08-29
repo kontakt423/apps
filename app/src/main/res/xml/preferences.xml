@@ -26,6 +26,11 @@
             android:title="@string/pref_autoplay_title"
             android:summary="@string/pref_autoplay_summary"
             android:defaultValue="true" />
+        <SwitchPreferenceCompat
+            android:key="desktop_mode"
+            android:title="@string/pref_desktop_title"
+            android:summary="@string/pref_desktop_summary"
+            android:defaultValue="false" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/pref_cat_updates">

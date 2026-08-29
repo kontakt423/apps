@@ -6,19 +6,21 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.support.v4.media.session.PlaybackStateCompat
+import android.os.Build
 import android.widget.RemoteViews
-import androidx.media.session.MediaButtonReceiver
 import com.spotilol.app.MainActivity
 import com.spotilol.app.R
+import com.spotilol.app.service.PlaybackService
 import com.spotilol.app.util.Prefs
 
 /**
- * Home-screen widget showing the current track and transport controls.
+ * Home-screen widget showing the current track, album cover and transport
+ * controls.
  *
- * Buttons reuse the same MediaSession transport as the notification (via
- * [MediaButtonReceiver]), so the widget, notification, lock screen and
- * Bluetooth all drive the exact same playback. No Firebase, no network.
+ * Control buttons send explicit commands to the running [PlaybackService], which
+ * relays them to the web player. This reaches an already-running foreground
+ * service reliably, whereas media-button broadcasts can be blocked in the
+ * background. No Firebase, no network here.
  */
 class SpotilolWidget : AppWidgetProvider() {
 
@@ -50,25 +52,17 @@ class SpotilolWidget : AppWidgetProvider() {
                 if (prefs.npPlaying) R.drawable.ic_pause else R.drawable.ic_play
             )
 
-            // Transport buttons -> MediaSession (same path as the notification).
-            views.setOnClickPendingIntent(
-                R.id.widget_prev,
-                MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    context, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                )
-            )
-            views.setOnClickPendingIntent(
-                R.id.widget_play_pause,
-                MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    context, PlaybackStateCompat.ACTION_PLAY_PAUSE
-                )
-            )
-            views.setOnClickPendingIntent(
-                R.id.widget_next,
-                MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    context, PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-                )
-            )
+            // Album cover (falls back to the app icon when none is loaded yet).
+            val art = NowPlayingArt.bitmap
+            if (art != null) {
+                views.setImageViewBitmap(R.id.widget_art, art)
+            } else {
+                views.setImageViewResource(R.id.widget_art, R.drawable.ic_launcher_foreground)
+            }
+
+            views.setOnClickPendingIntent(R.id.widget_prev, command(context, PlaybackService.ACTION_PREV, 1))
+            views.setOnClickPendingIntent(R.id.widget_play_pause, command(context, PlaybackService.ACTION_TOGGLE, 2))
+            views.setOnClickPendingIntent(R.id.widget_next, command(context, PlaybackService.ACTION_NEXT, 3))
 
             // Tapping the track info opens the app.
             val open = PendingIntent.getActivity(
@@ -78,6 +72,17 @@ class SpotilolWidget : AppWidgetProvider() {
             views.setOnClickPendingIntent(R.id.widget_info, open)
 
             return views
+        }
+
+        /** A PendingIntent that delivers [action] to the playback service. */
+        private fun command(context: Context, action: String, req: Int): PendingIntent {
+            val intent = Intent(context, PlaybackService::class.java).setAction(action)
+            val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                PendingIntent.getForegroundService(context, req, intent, flags)
+            } else {
+                PendingIntent.getService(context, req, intent, flags)
+            }
         }
     }
 }

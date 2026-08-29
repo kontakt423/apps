@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity(), WebAppBridge.Listener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var prefs: Prefs
+    private var currentDesktopMode = false
 
     private var service: PlaybackService? = null
     private val connection = object : ServiceConnection {
@@ -75,7 +76,8 @@ class MainActivity : AppCompatActivity(), WebAppBridge.Listener {
     }
 
     private fun setupWebView() {
-        binding.webView.configure()
+        currentDesktopMode = prefs.desktopMode
+        binding.webView.configure(currentDesktopMode)
         binding.webView.addJavascriptInterface(WebAppBridge(this), WebAppBridge.NAME)
 
         // Spotify's Web Player streams DRM-protected (Widevine/EME) audio. Without
@@ -135,6 +137,13 @@ class MainActivity : AppCompatActivity(), WebAppBridge.Listener {
     override fun onResume() {
         super.onResume()
         applyKeepScreenOn()
+        // If the desktop/mobile mode was changed in settings, re-apply the UA and
+        // reload the player so the new player variant takes effect.
+        if (prefs.desktopMode != currentDesktopMode) {
+            currentDesktopMode = prefs.desktopMode
+            binding.webView.configure(currentDesktopMode)
+            binding.webView.loadPlayer()
+        }
         // Re-apply AMOLED in case it was toggled in settings.
         binding.webView.applyAmoled(prefs.amoledMode)
     }

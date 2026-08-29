@@ -15,19 +15,27 @@ class SpotiWebView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : WebView(context, attrs) {
 
+    /**
+     * @param desktop when true, use a desktop UA so Spotify serves the full web
+     * player (full library / playlist browsing). Trade-off: playback in a WebView
+     * is less reliable in this mode. Default (false) = mobile touch player, which
+     * plays reliably but restricts library browsing.
+     */
     @SuppressLint("SetJavaScriptEnabled")
-    fun configure() {
+    fun configure(desktop: Boolean) {
         settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
             mediaPlaybackRequiresUserGesture = false
             cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
-            // Mobile UA: serves the touch player that plays reliably in a WebView.
-            userAgentString = MOBILE_UA
+            userAgentString = if (desktop) DESKTOP_UA else MOBILE_UA
             loadWithOverviewMode = true
             useWideViewPort = true
-            setSupportZoom(false)
+            // Desktop layout is wide, so allow pinch-zoom to read it on a phone.
+            setSupportZoom(desktop)
+            builtInZoomControls = desktop
+            displayZoomControls = false
         }
     }
 
@@ -61,5 +69,10 @@ class SpotiWebView @JvmOverloads constructor(
         private const val MOBILE_UA =
             "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) " +
                 "Chrome/124.0.0.0 Mobile Safari/537.36"
+
+        // Desktop UA: full web player incl. library browsing (see configure()).
+        private const val DESKTOP_UA =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     }
 }

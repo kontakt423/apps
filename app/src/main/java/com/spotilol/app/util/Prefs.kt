@@ -19,6 +19,7 @@ class Prefs(context: Context) {
     val adBlockEnabled: Boolean get() = sp.getBoolean(KEY_ADBLOCK, true)
     val autoplayEnabled: Boolean get() = sp.getBoolean(KEY_AUTOPLAY, true)
     val autoUpdate: Boolean get() = sp.getBoolean(KEY_AUTO_UPDATE, true)
+    val desktopMode: Boolean get() = sp.getBoolean(KEY_DESKTOP_MODE, false)
 
     var lastUpdateCheck: Long
         get() = sp.getLong(KEY_LAST_UPDATE_CHECK, 0L)
@@ -43,6 +44,7 @@ class Prefs(context: Context) {
         const val KEY_ADBLOCK = "adblock_enabled"
         const val KEY_AUTOPLAY = "autoplay_enabled"
         const val KEY_AUTO_UPDATE = "auto_update"
+        const val KEY_DESKTOP_MODE = "desktop_mode"
         const val KEY_LAST_UPDATE_CHECK = "last_update_check"
         const val KEY_NP_TITLE = "np_title"
         const val KEY_NP_ARTIST = "np_artist"

@@ -21,7 +21,16 @@ import com.spotilol.app.MainActivity
 import com.spotilol.app.R
 import com.spotilol.app.util.Prefs
 import com.spotilol.app.webview.PlayerState
+import com.spotilol.app.widget.NowPlayingArt
 import com.spotilol.app.widget.SpotilolWidget
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * Foreground service that mirrors the web player into an Android MediaSession and
@@ -50,6 +59,8 @@ class PlaybackService : Service() {
     private var controls: Controls? = null
     private lateinit var session: MediaSessionCompat
     private var lastState = PlayerState()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var lastArtUrl: String = ""
 
     override fun onBind(intent: Intent?): IBinder = binder
 
@@ -67,11 +78,19 @@ class PlaybackService : Service() {
             isActive = true
         }
         // Post an initial (empty) notification so we satisfy startForeground quickly.
-        startForeground(NOTIF_ID, buildNotification(null))
+        startForeground(NOTIF_ID, buildNotification())
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        MediaButtonReceiver.handleIntent(session, intent)
+        // Explicit transport commands from the home-screen widget. These reach an
+        // already-running foreground service reliably (unlike media-button
+        // broadcasts, which the system may block from the background).
+        when (intent?.action) {
+            ACTION_PREV -> controls?.previous()
+            ACTION_TOGGLE -> controls?.toggle()
+            ACTION_NEXT -> controls?.next()
+            else -> MediaButtonReceiver.handleIntent(session, intent)
+        }
         return START_STICKY
     }
 
@@ -80,12 +99,7 @@ class PlaybackService : Service() {
     /** Called by the Activity whenever the web player's state changes. */
     fun updateState(state: PlayerState) {
         lastState = state
-        val metadata = MediaMetadataCompat.Builder()
-            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, state.title)
-            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, state.artist)
-            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, state.durationSec * 1000)
-            .build()
-        session.setMetadata(metadata)
+        publishMetadata(state)
 
         val playState = if (state.playing) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
         val actions = PlaybackStateCompat.ACTION_PLAY or
@@ -101,14 +115,64 @@ class PlaybackService : Service() {
                 .build()
         )
 
-        notificationManager().notify(NOTIF_ID, buildNotification(null))
+        notificationManager().notify(NOTIF_ID, buildNotification())
 
         // Mirror state to the home-screen widget.
         Prefs(this).saveNowPlaying(state.title, state.artist, state.playing)
         SpotilolWidget.refresh(this)
+
+        // Load the album cover asynchronously (once per new URL).
+        maybeLoadArtwork(state.artworkUrl)
     }
 
-    private fun buildNotification(art: Bitmap?): Notification {
+    private fun publishMetadata(state: PlayerState) {
+        val metadata = MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, state.title)
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, state.artist)
+            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, state.durationSec * 1000)
+            .apply {
+                NowPlayingArt.bitmap?.let {
+                    putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, it)
+                }
+            }
+            .build()
+        session.setMetadata(metadata)
+    }
+
+    private fun maybeLoadArtwork(url: String) {
+        if (url.isBlank()) {
+            if (lastArtUrl.isNotEmpty()) {
+                lastArtUrl = ""
+                NowPlayingArt.bitmap = null
+            }
+            return
+        }
+        if (url == lastArtUrl && NowPlayingArt.bitmap != null) return
+        lastArtUrl = url
+        scope.launch {
+            val bmp = downloadBitmap(url) ?: return@launch
+            NowPlayingArt.bitmap = bmp
+            withContext(Dispatchers.Main) {
+                // Refresh everything that shows the cover.
+                publishMetadata(lastState)
+                notificationManager().notify(NOTIF_ID, buildNotification())
+                SpotilolWidget.refresh(this@PlaybackService)
+            }
+        }
+    }
+
+    private fun downloadBitmap(url: String): Bitmap? = try {
+        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 10_000
+            readTimeout = 10_000
+            instanceFollowRedirects = true
+        }
+        conn.inputStream.use { android.graphics.BitmapFactory.decodeStream(it) }
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun buildNotification(): Notification {
         val contentIntent = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -125,7 +189,7 @@ class PlaybackService : Service() {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(lastState.title.ifEmpty { getString(R.string.app_name) })
             .setContentText(lastState.artist)
-            .setLargeIcon(art)
+            .setLargeIcon(NowPlayingArt.bitmap)
             .setContentIntent(contentIntent)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
@@ -160,6 +224,7 @@ class PlaybackService : Service() {
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     override fun onDestroy() {
+        scope.cancel()
         session.isActive = false
         session.release()
         super.onDestroy()
@@ -168,5 +233,9 @@ class PlaybackService : Service() {
     companion object {
         private const val CHANNEL_ID = "spotilol_playback"
         private const val NOTIF_ID = 1001
+
+        const val ACTION_PREV = "com.spotilol.app.action.PREV"
+        const val ACTION_TOGGLE = "com.spotilol.app.action.TOGGLE"
+        const val ACTION_NEXT = "com.spotilol.app.action.NEXT"
     }
 }

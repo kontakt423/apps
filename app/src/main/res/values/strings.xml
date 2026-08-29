@@ -13,6 +13,8 @@
     <string name="pref_adblock_summary">Automatically skip and mute Spotify audio ads via injected script</string>
     <string name="pref_autoplay_title">Autoplay similar tracks</string>
     <string name="pref_autoplay_summary">Continue playing related songs when a playlist ends</string>
+    <string name="pref_desktop_title">Desktop mode (full library)</string>
+    <string name="pref_desktop_summary">Load the desktop web player so you can browse your library and playlists. Trade-off: playback can be less reliable than in the default mobile player. Restart or reopen the app after changing.</string>
 
     <string name="pref_cat_updates">Updates</string>
     <string name="pref_auto_update_title">Check for updates automatically</string>
